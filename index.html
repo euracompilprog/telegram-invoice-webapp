@@ -3,21 +3,21 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Telegram Invoice Web App</title>
+  <title>Invoice Generator</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
     :root {
       --bg: #eef7ff;
-      --bg-2: #f8fbff;
-      --panel: rgba(255, 255, 255, 0.86);
+      --panel: #f8fbff;
       --paper: #ffffff;
       --ink: #102033;
-      --muted: #62748a;
+      --muted: #61748b;
       --line: #d8e7f4;
-      --accent: #2d8cff;
-      --accent-dark: #116bd6;
       --soft: #eaf5ff;
+      --accent: #2d8cff;
+      --accent-dark: #126bd6;
       --danger: #b42318;
+      --ok: #0f766e;
       --shadow: 0 18px 50px rgba(45, 140, 255, 0.14);
     }
 
@@ -28,30 +28,27 @@
       min-height: 100vh;
       color: var(--ink);
       font-family: Arial, Helvetica, sans-serif;
-      line-height: 1.42;
       background:
-        radial-gradient(circle at 18% 8%, rgba(105, 185, 255, 0.34), transparent 32%),
-        radial-gradient(circle at 82% 12%, rgba(183, 221, 255, 0.48), transparent 30%),
-        linear-gradient(135deg, var(--bg), var(--bg-2));
+        radial-gradient(circle at 16% 6%, rgba(105, 185, 255, 0.35), transparent 32%),
+        linear-gradient(135deg, var(--bg), #fbfdff);
     }
 
     button, input, select, textarea { font: inherit; }
+    h1, h2, h3, p { margin: 0; letter-spacing: 0; }
 
     .app {
       display: grid;
-      grid-template-columns: minmax(340px, 430px) minmax(0, 1fr);
+      grid-template-columns: minmax(360px, 470px) minmax(0, 1fr);
       gap: 18px;
       min-height: 100vh;
       padding: 16px;
     }
 
     .controls, .invoice {
-      border: 1px solid rgba(216, 231, 244, 0.92);
+      border: 1px solid var(--line);
       border-radius: 20px;
-      background: var(--panel);
+      background: rgba(255, 255, 255, 0.9);
       box-shadow: var(--shadow);
-      backdrop-filter: blur(18px);
-      -webkit-backdrop-filter: blur(18px);
     }
 
     .controls {
@@ -70,16 +67,11 @@
       margin-bottom: 14px;
     }
 
-    h1, h2, h3, p { margin: 0; letter-spacing: 0; }
-    h1 { font-size: 24px; color: #0a2f5c; }
-    h2 { font-size: 14px; margin: 18px 0 10px; color: #16436f; }
-    h3 { font-size: 14px; margin-bottom: 8px; }
+    h1 { color: #0a2f5c; font-size: 24px; }
+    h2 { color: #16436f; font-size: 15px; margin: 18px 0 10px; }
+    h3 { color: #16436f; font-size: 14px; margin-bottom: 8px; }
 
-    .hint {
-      color: var(--muted);
-      font-size: 13px;
-      margin-top: 4px;
-    }
+    .hint { color: var(--muted); font-size: 13px; margin-top: 4px; }
 
     label {
       display: block;
@@ -94,17 +86,47 @@
       border: 1px solid var(--line);
       border-radius: 11px;
       padding: 10px 11px;
-      outline: none;
       color: var(--ink);
-      background: rgba(255, 255, 255, 0.9);
+      background: #fff;
+      outline: none;
     }
 
-    textarea { min-height: 72px; resize: vertical; }
+    textarea { min-height: 74px; resize: vertical; }
     input:focus, select:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(45, 140, 255, 0.12); }
 
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
     .field { margin-bottom: 10px; }
-    .language { min-width: 112px; }
+
+    .tabs {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      padding: 5px;
+      margin: 14px 0 16px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--soft);
+    }
+
+    .tab-btn {
+      border: 0;
+      border-radius: 10px;
+      padding: 9px 6px;
+      color: #174469;
+      background: transparent;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .tab-btn.active {
+      color: #fff;
+      background: linear-gradient(135deg, #55b6ff, var(--accent));
+    }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
 
     .btn {
       border: 0;
@@ -115,8 +137,6 @@
       cursor: pointer;
       font-weight: 900;
     }
-
-    .btn:hover { filter: brightness(1.04); }
 
     .btn.secondary {
       color: #0d477e;
@@ -130,43 +150,46 @@
       background: #fff7f5;
     }
 
-    .actions {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      margin-top: 16px;
-    }
+    .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
 
-    .catalog-tools {
+    .tool-card {
       border: 1px solid var(--line);
-      border-radius: 14px;
+      border-radius: 15px;
       padding: 12px;
-      background: rgba(234, 245, 255, 0.72);
       margin-bottom: 12px;
+      background: rgba(234, 245, 255, 0.72);
     }
 
-    .catalog-list {
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .select-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-      gap: 7px;
-      max-height: 240px;
-      overflow: auto;
-      margin-top: 8px;
+      gap: 8px;
     }
 
-    .catalog-item {
-      display: grid;
-      gap: 10px;
+    .mini-card {
       border: 1px solid var(--line);
       border-radius: 14px;
-      padding: 8px 10px;
+      padding: 9px;
       background: #fff;
-      font-size: 13px;
+      color: var(--ink);
+      text-align: left;
+      cursor: pointer;
     }
 
-    .catalog-item span { color: var(--muted); }
+    .mini-card.active { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(45, 140, 255, 0.13); }
+    .mini-card strong { display: block; font-size: 13px; }
+    .mini-card span { display: block; margin-top: 3px; color: var(--muted); font-size: 12px; }
 
-    .catalog-photo, .card-photo {
+    .photo {
+      width: 100%;
+      aspect-ratio: 4 / 3;
       border: 1px dashed var(--line);
       border-radius: 12px;
       background: var(--soft);
@@ -177,70 +200,56 @@
       color: var(--muted);
       font-size: 12px;
       text-align: center;
+      margin-bottom: 7px;
     }
 
-    .catalog-photo { width: 100%; aspect-ratio: 4 / 3; }
-    .card-photo { width: 56px; height: 56px; flex: 0 0 auto; }
-    .catalog-photo img, .card-photo img { width: 100%; height: 100%; object-fit: contain; }
+    .line-photo {
+      width: 52px;
+      height: 52px;
+      border: 1px dashed var(--line);
+      border-radius: 12px;
+      background: var(--soft);
+      overflow: hidden;
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      font-size: 10px;
+      text-align: center;
+    }
 
-    .picker-grid {
+    .photo img, .line-photo img { width: 100%; height: 100%; object-fit: contain; }
+
+    .invoice-lines {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(138px, 1fr));
       gap: 8px;
-      margin-bottom: 10px;
+      margin-top: 10px;
     }
 
-    .product-card {
+    .invoice-line {
+      display: grid;
+      grid-template-columns: 1fr 76px 96px 78px auto;
+      gap: 8px;
+      align-items: end;
       border: 1px solid var(--line);
       border-radius: 14px;
-      padding: 8px;
+      padding: 10px;
       background: #fff;
-      cursor: pointer;
-      text-align: left;
-      color: var(--ink);
     }
 
-    .product-card.active {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(45, 140, 255, 0.14);
-    }
+    .line-title { display: flex; gap: 9px; align-items: center; min-width: 0; }
+    .line-title strong { display: block; font-size: 13px; }
+    .line-title span { display: block; color: var(--muted); font-size: 12px; }
 
-    .product-card strong {
-      display: block;
-      margin-top: 6px;
-      font-size: 13px;
-    }
-
-    .product-card span {
-      display: block;
-      color: var(--muted);
-      font-size: 12px;
-      margin-top: 2px;
-    }
-
-    .product-editor {
-      border: 1px solid var(--line);
-      border-radius: 15px;
-      padding: 12px;
-      margin-bottom: 10px;
-      background: rgba(255, 255, 255, 0.72);
-    }
-
-    .product-head {
-      display: flex;
-      justify-content: space-between;
-      gap: 10px;
-      align-items: center;
-      margin-bottom: 10px;
-    }
-
-    .remove {
+    .icon-btn {
       border: 0;
-      background: transparent;
+      border-radius: 10px;
+      padding: 10px;
       color: var(--danger);
+      background: #fff1ef;
       cursor: pointer;
       font-weight: 900;
-      padding: 4px;
     }
 
     .invoice {
@@ -260,11 +269,7 @@
       margin-bottom: 18px;
     }
 
-    .brand {
-      display: flex;
-      gap: 14px;
-      align-items: center;
-    }
+    .brand { display: flex; gap: 14px; align-items: center; }
 
     .logo {
       width: 86px;
@@ -283,111 +288,30 @@
     }
 
     .logo img { width: 100%; height: 100%; object-fit: contain; }
-
-    .brand-name {
-      font-size: 27px;
-      font-weight: 900;
-      color: #0a2f5c;
-      margin-bottom: 3px;
-    }
-
+    .brand-name { font-size: 27px; font-weight: 900; color: #0a2f5c; margin-bottom: 3px; }
     .invoice-title { text-align: right; min-width: 230px; }
-
-    .invoice-title strong {
-      display: block;
-      color: var(--accent);
-      font-size: 31px;
-      margin-bottom: 7px;
-    }
-
+    .invoice-title strong { display: block; color: var(--accent); font-size: 31px; margin-bottom: 7px; }
     .meta-line { color: var(--muted); font-size: 13px; margin-top: 3px; }
 
-    .parties {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-bottom: 16px;
-    }
-
-    .party, .note-box, .summary {
-      border: 1px solid var(--line);
-      border-radius: 12px;
-      background: #fbfdff;
-    }
-
+    .parties { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+    .party, .note-box, .summary { border: 1px solid var(--line); border-radius: 12px; background: #fbfdff; }
     .party { padding: 12px; min-height: 112px; }
-
-    .party-title {
-      color: var(--accent-dark);
-      font-size: 11px;
-      font-weight: 900;
-      text-transform: uppercase;
-      margin-bottom: 6px;
-    }
-
+    .party-title { color: var(--accent-dark); font-size: 11px; font-weight: 900; text-transform: uppercase; margin-bottom: 6px; }
     .party-name { font-weight: 900; margin-bottom: 4px; }
     .muted { color: var(--muted); white-space: pre-wrap; }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 14px;
-    }
-
-    th, td {
-      border-bottom: 1px solid var(--line);
-      padding: 10px 7px;
-      text-align: left;
-      vertical-align: top;
-    }
-
-    th {
-      background: var(--soft);
-      color: #16436f;
-      font-size: 11px;
-      text-transform: uppercase;
-    }
-
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th, td { border-bottom: 1px solid var(--line); padding: 10px 7px; text-align: left; vertical-align: top; }
+    th { background: var(--soft); color: #16436f; font-size: 11px; text-transform: uppercase; }
     .right { text-align: right; }
 
-    .totals {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) 350px;
-      gap: 18px;
-      margin-top: 18px;
-      align-items: start;
-    }
-
+    .totals { display: grid; grid-template-columns: minmax(0, 1fr) 350px; gap: 18px; margin-top: 18px; align-items: start; }
     .note-box { padding: 12px; min-height: 112px; }
     .summary { overflow: hidden; }
-
-    .summary-row {
-      display: flex;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 10px 12px;
-      border-bottom: 1px solid var(--line);
-    }
-
+    .summary-row { display: flex; justify-content: space-between; gap: 12px; padding: 10px 12px; border-bottom: 1px solid var(--line); }
     .summary-row:last-child { border-bottom: 0; }
-
-    .summary-row.total {
-      color: #fff;
-      background: linear-gradient(135deg, #55b6ff, var(--accent));
-      font-weight: 900;
-      font-size: 18px;
-    }
-
-    .footer {
-      display: flex;
-      justify-content: space-between;
-      gap: 18px;
-      margin-top: 22px;
-      padding-top: 15px;
-      border-top: 1px solid var(--line);
-      color: var(--muted);
-      font-size: 13px;
-    }
+    .summary-row.total { color: #fff; background: linear-gradient(135deg, #55b6ff, var(--accent)); font-weight: 900; font-size: 18px; }
+    .footer { display: flex; justify-content: space-between; gap: 18px; margin-top: 22px; padding-top: 15px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
 
     @media (max-width: 980px) {
       .app { grid-template-columns: 1fr; }
@@ -396,7 +320,7 @@
 
     @media (max-width: 660px) {
       .app { padding: 10px; }
-      .grid-2, .invoice-top, .parties, .totals { grid-template-columns: 1fr; }
+      .grid-2, .grid-3, .invoice-top, .parties, .totals, .invoice-line { grid-template-columns: 1fr; }
       .invoice { padding: 18px; border-radius: 16px; }
       .invoice-title { text-align: left; }
       table { font-size: 12px; }
@@ -408,14 +332,7 @@
       .controls { display: none; }
       .app { display: block; padding: 0; }
       .preview-wrap { padding: 0; }
-      .invoice {
-        width: 100%;
-        min-height: 100vh;
-        border: 0;
-        border-radius: 0;
-        box-shadow: none;
-        padding: 14mm;
-      }
+      .invoice { width: 100%; min-height: 100vh; border: 0; border-radius: 0; box-shadow: none; padding: 14mm; }
     }
   </style>
 </head>
@@ -424,87 +341,109 @@
     <aside class="controls">
       <div class="topbar">
         <div>
-          <h1 data-i18n="appTitle">Invoice Web App</h1>
-          <p class="hint" data-i18n="appHint">Mahsulotlar va invoice avtomatik saqlanadi.</p>
+          <h1>Invoice Web App</h1>
+          <p class="hint">Avval ombor va dillerlarni saqlang, invoice'da faqat tanlang.</p>
         </div>
-        <select class="language" id="language">
+        <select id="language" aria-label="Language">
           <option value="uz">UZ</option>
           <option value="ru">RU</option>
           <option value="en">EN</option>
         </select>
       </div>
 
-      <h2 data-i18n="invoiceInfo">Invoice</h2>
-      <div class="grid-2">
-        <div class="field"><label for="invoiceNo" data-i18n="invoiceNo">Invoice raqami</label><input id="invoiceNo" value="INV-001"></div>
-        <div class="field"><label for="invoiceDate" data-i18n="date">Sana</label><input id="invoiceDate" type="date"></div>
-      </div>
-      <div class="grid-2">
-        <div class="field"><label for="dueDate" data-i18n="dueDate">To'lov sanasi</label><input id="dueDate" type="date"></div>
-        <div class="field"><label for="usdRate" data-i18n="usdRate">1 USD kursi</label><input id="usdRate" type="number" min="0" step="1" value="12600"></div>
-      </div>
+      <nav class="tabs">
+        <button class="tab-btn active" data-tab="invoice" type="button">Invoice</button>
+        <button class="tab-btn" data-tab="warehouse" type="button">Ombor</button>
+        <button class="tab-btn" data-tab="dealers" type="button">Dillerlar</button>
+        <button class="tab-btn" data-tab="settings" type="button">Sozlamalar</button>
+      </nav>
 
-      <h2 data-i18n="seller">Sotuvchi</h2>
-      <div class="field"><label for="logoInput" data-i18n="logo">Logo</label><input id="logoInput" type="file" accept="image/*"></div>
-      <div class="field"><label for="sellerBrand" data-i18n="brandName">Brend nomi</label><input id="sellerBrand" value="Avtoshampun Brendi"></div>
-      <div class="field"><label for="sellerName" data-i18n="sellerName">Sotuvchi firma yoki F.I.Sh.</label><input id="sellerName" value="Sizning kompaniyangiz"></div>
-      <div class="grid-2">
-        <div class="field"><label for="sellerPhone" data-i18n="phone">Telefon</label><input id="sellerPhone" placeholder="+998 ..."></div>
-        <div class="field"><label for="sellerTax" data-i18n="taxId">STIR</label><input id="sellerTax" placeholder="STIR"></div>
-      </div>
-      <div class="field"><label for="sellerAddress" data-i18n="addressBank">Manzil / bank</label><textarea id="sellerAddress" placeholder="Manzil, hisob raqam, bank"></textarea></div>
-
-      <h2 data-i18n="buyer">Oluvchi</h2>
-      <div class="field"><label for="buyerName" data-i18n="buyerName">Diller yoki magazin nomi</label><input id="buyerName" placeholder="Masalan: Auto Market"></div>
-      <div class="grid-2">
-        <div class="field"><label for="buyerPhone" data-i18n="phone">Telefon</label><input id="buyerPhone" placeholder="+998 ..."></div>
-        <div class="field"><label for="buyerTax" data-i18n="taxId">STIR</label><input id="buyerTax" placeholder="STIR"></div>
-      </div>
-      <div class="field"><label for="buyerAddress" data-i18n="buyerAddress">Oluvchi manzili</label><textarea id="buyerAddress" placeholder="Magazin yoki diller manzili"></textarea></div>
-
-      <h2 data-i18n="catalog">Mahsulot katalogi</h2>
-      <div class="catalog-tools">
+      <section class="tab-panel active" id="tab-invoice">
+        <h2>Invoice ma'lumotlari</h2>
         <div class="grid-2">
-          <div class="field"><label for="catalogName" data-i18n="productName">Mahsulot nomi</label><input id="catalogName" placeholder="Avtoshampun 5L"></div>
-          <div class="field"><label for="catalogKg" data-i18n="netKg">Mahsulot kg</label><input id="catalogKg" type="number" min="0" step="0.01" placeholder="20"></div>
+          <div class="field"><label for="invoiceNo">Invoice raqami</label><input id="invoiceNo" value="INV-001"></div>
+          <div class="field"><label for="invoiceDate">Sana</label><input id="invoiceDate" type="date"></div>
         </div>
         <div class="grid-2">
-          <div class="field"><label for="catalogCanisterKg" data-i18n="canisterKg">Kanistr kg</label><input id="catalogCanisterKg" type="number" min="0" step="0.01" placeholder="0.86"></div>
-          <div class="field"><label for="catalogImage" data-i18n="productImage">Mahsulot rasmi</label><input id="catalogImage" type="file" accept="image/*"></div>
+          <div class="field"><label for="dueDate">To'lov sanasi</label><input id="dueDate" type="date"></div>
+          <div class="field"><label for="usdRate">1 USD kursi</label><input id="usdRate" type="number" min="0" step="1" value="12600"></div>
         </div>
-        <button class="btn" id="saveCatalogProduct" type="button" data-i18n="saveProduct">Mahsulotni saqlash</button>
-        <div class="catalog-list" id="catalogList"></div>
-      </div>
 
-      <h2 data-i18n="invoiceProducts">Invoice mahsulotlari</h2>
-      <div id="products"></div>
-      <button class="btn secondary" id="addProduct" type="button" data-i18n="addRow">+ Qator qo'shish</button>
+        <h2>Dillerni tanlang</h2>
+        <div class="select-grid" id="dealerPicker"></div>
 
-      <h2 data-i18n="delivery">Dostavka</h2>
-      <div class="grid-2">
-        <div class="field">
-          <label for="deliveryType" data-i18n="deliveryType">Dostavka turi</label>
-          <select id="deliveryType">
-            <option value="free" data-i18n="free">Bepul</option>
-            <option value="paid" data-i18n="paid">Pullik</option>
-          </select>
+        <h2>Mahsulotni tanlang</h2>
+        <div class="select-grid" id="productPicker"></div>
+
+        <h2>Invoice qatorlari</h2>
+        <div class="invoice-lines" id="invoiceLines"></div>
+
+        <h2>Dostavka</h2>
+        <div class="grid-2">
+          <div class="field">
+            <label for="deliveryType">Dostavka turi</label>
+            <select id="deliveryType">
+              <option value="free">Bepul</option>
+              <option value="paid">Pullik</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="deliveryCurrency">Valyuta</label>
+            <select id="deliveryCurrency"><option value="UZS">UZS</option><option value="USD">USD</option></select>
+          </div>
         </div>
-        <div class="field">
-          <label for="deliveryCurrency" data-i18n="currency">Valyuta</label>
-          <select id="deliveryCurrency"><option value="UZS">UZS</option><option value="USD">USD</option></select>
+        <div class="field"><label for="deliveryPrice">Dostavka narxi</label><input id="deliveryPrice" type="number" min="0" step="0.01" value="0"></div>
+        <div class="field"><label for="notes">Izoh</label><textarea id="notes" placeholder="To'lov sharti yoki boshqa izohlar"></textarea></div>
+
+        <div class="actions">
+          <button class="btn" id="printBtn" type="button">Print / PDF</button>
+          <button class="btn secondary" id="telegramBtn" type="button">Telegramga yuborish</button>
+          <button class="btn secondary" id="clearInvoiceBtn" type="button">Invoice tozalash</button>
+          <button class="btn danger" id="clearAllBtn" type="button">Hammasini tozalash</button>
         </div>
-      </div>
-      <div class="field"><label for="deliveryPrice" data-i18n="deliveryPrice">Dostavka narxi</label><input id="deliveryPrice" type="number" min="0" step="0.01" value="0"></div>
+      </section>
 
-      <h2 data-i18n="notes">Izoh</h2>
-      <div class="field"><textarea id="notes" placeholder="To'lov sharti yoki boshqa izohlar"></textarea></div>
+      <section class="tab-panel" id="tab-warehouse">
+        <h2>Ombor: mahsulot qo'shish</h2>
+        <div class="tool-card">
+          <div class="field"><label for="catalogName">Mahsulot nomi</label><input id="catalogName" placeholder="Avtoshampun 20 kg"></div>
+          <div class="grid-2">
+            <div class="field"><label for="catalogKg">Mahsulot kg</label><input id="catalogKg" type="number" min="0" step="0.01" placeholder="20"></div>
+            <div class="field"><label for="catalogCanisterKg">Kanistr kg</label><input id="catalogCanisterKg" type="number" min="0" step="0.01" placeholder="0.86"></div>
+          </div>
+          <div class="field"><label for="catalogImage">Mahsulot rasmi</label><input id="catalogImage" type="file" accept="image/*"></div>
+          <button class="btn" id="saveCatalogProduct" type="button">Mahsulotni saqlash</button>
+        </div>
+        <h2>Saqlangan mahsulotlar</h2>
+        <div class="card-grid" id="catalogList"></div>
+      </section>
 
-      <div class="actions">
-        <button class="btn" id="printBtn" type="button" data-i18n="printPdf">Print / PDF</button>
-        <button class="btn secondary" id="telegramBtn" type="button" data-i18n="telegramSend">Telegramga yuborish</button>
-        <button class="btn secondary" id="clearInvoiceBtn" type="button" data-i18n="clearInvoice">Invoice tozalash</button>
-        <button class="btn danger" id="clearAllBtn" type="button" data-i18n="clearAll">Hammasini tozalash</button>
-      </div>
+      <section class="tab-panel" id="tab-dealers">
+        <h2>Diller qo'shish</h2>
+        <div class="tool-card">
+          <div class="field"><label for="dealerName">Diller yoki magazin nomi</label><input id="dealerName" placeholder="Auto Market"></div>
+          <div class="grid-2">
+            <div class="field"><label for="dealerPhone">Telefon</label><input id="dealerPhone" placeholder="+998 ..."></div>
+            <div class="field"><label for="dealerTax">STIR</label><input id="dealerTax" placeholder="STIR"></div>
+          </div>
+          <div class="field"><label for="dealerAddress">Manzil</label><textarea id="dealerAddress" placeholder="Magazin yoki diller manzili"></textarea></div>
+          <button class="btn" id="saveDealer" type="button">Dillerni saqlash</button>
+        </div>
+        <h2>Saqlangan dillerlar</h2>
+        <div class="card-grid" id="dealerList"></div>
+      </section>
+
+      <section class="tab-panel" id="tab-settings">
+        <h2>Sotuvchi va brend</h2>
+        <div class="field"><label for="logoInput">Logo</label><input id="logoInput" type="file" accept="image/*"></div>
+        <div class="field"><label for="sellerBrand">Brend nomi</label><input id="sellerBrand" value="Avtoshampun Brendi"></div>
+        <div class="field"><label for="sellerName">Sotuvchi firma yoki F.I.Sh.</label><input id="sellerName" value="Sizning kompaniyangiz"></div>
+        <div class="grid-2">
+          <div class="field"><label for="sellerPhone">Telefon</label><input id="sellerPhone" placeholder="+998 ..."></div>
+          <div class="field"><label for="sellerTax">STIR</label><input id="sellerTax" placeholder="STIR"></div>
+        </div>
+        <div class="field"><label for="sellerAddress">Manzil / bank</label><textarea id="sellerAddress" placeholder="Manzil, hisob raqam, bank"></textarea></div>
+      </section>
     </aside>
 
     <section class="preview-wrap">
@@ -519,25 +458,25 @@
             </div>
           </div>
           <div class="invoice-title">
-            <strong data-i18n="invoiceTitle">INVOICE</strong>
-            <div class="meta-line"><span data-i18n="invoiceNo">Invoice raqami</span>: <span data-out="invoiceNo"></span></div>
-            <div class="meta-line"><span data-i18n="date">Sana</span>: <span data-out="invoiceDate"></span></div>
-            <div class="meta-line"><span data-i18n="dueDate">To'lov sanasi</span>: <span data-out="dueDate"></span></div>
+            <strong>INVOICE</strong>
+            <div class="meta-line">Invoice raqami: <span data-out="invoiceNo"></span></div>
+            <div class="meta-line">Sana: <span data-out="invoiceDate"></span></div>
+            <div class="meta-line">To'lov sanasi: <span data-out="dueDate"></span></div>
           </div>
         </header>
 
         <section class="parties">
           <div class="party">
-            <div class="party-title" data-i18n="seller">Sotuvchi</div>
+            <div class="party-title">Sotuvchi</div>
             <div class="party-name" data-out="sellerName"></div>
-            <div class="muted"><span data-i18n="phone">Telefon</span>: <span data-out="sellerPhone"></span></div>
+            <div class="muted">Telefon: <span data-out="sellerPhone"></span></div>
             <div class="muted">STIR: <span data-out="sellerTax"></span></div>
             <div class="muted" data-out="sellerAddress"></div>
           </div>
           <div class="party">
-            <div class="party-title" data-i18n="buyer">Oluvchi</div>
+            <div class="party-title">Oluvchi</div>
             <div class="party-name" data-out="buyerName"></div>
-            <div class="muted"><span data-i18n="phone">Telefon</span>: <span data-out="buyerPhone"></span></div>
+            <div class="muted">Telefon: <span data-out="buyerPhone"></span></div>
             <div class="muted">STIR: <span data-out="buyerTax"></span></div>
             <div class="muted" data-out="buyerAddress"></div>
           </div>
@@ -546,12 +485,12 @@
         <table>
           <thead>
             <tr>
-              <th data-i18n="productName">Mahsulot nomi</th>
-              <th class="right" data-i18n="netKg">Mahsulot kg</th>
-              <th class="right" data-i18n="canisterKg">Kanistr kg</th>
-              <th class="right" data-i18n="qty">Soni</th>
-              <th class="right" data-i18n="price">Narx</th>
-              <th class="right" data-i18n="lineTotal">Jami</th>
+              <th>Mahsulot nomi</th>
+              <th class="right">Mahsulot kg</th>
+              <th class="right">Kanistr kg</th>
+              <th class="right">Soni</th>
+              <th class="right">Narx</th>
+              <th class="right">Jami</th>
             </tr>
           </thead>
           <tbody id="invoiceRows"></tbody>
@@ -559,121 +498,47 @@
 
         <section class="totals">
           <div class="note-box">
-            <h3 data-i18n="notes">Izoh</h3>
+            <h3>Izoh</h3>
             <div class="muted" data-out="notes"></div>
           </div>
           <div class="summary">
-            <div class="summary-row"><span data-i18n="itemsTotal">Mahsulotlar jami</span><strong id="subtotalOut"></strong></div>
-            <div class="summary-row"><span data-i18n="totalWeight">Umumiy kg</span><strong id="weightOut"></strong></div>
-            <div class="summary-row"><span data-i18n="delivery">Dostavka</span><strong id="deliveryOut"></strong></div>
-            <div class="summary-row total"><span data-i18n="grandTotal">Umumiy</span><span id="totalOut"></span></div>
-            <div class="summary-row"><span data-i18n="usdTotal">USD hisobida</span><strong id="totalUsdOut"></strong></div>
+            <div class="summary-row"><span>Mahsulotlar jami</span><strong id="subtotalOut"></strong></div>
+            <div class="summary-row"><span>Umumiy kg</span><strong id="weightOut"></strong></div>
+            <div class="summary-row"><span>Dostavka</span><strong id="deliveryOut"></strong></div>
+            <div class="summary-row total"><span>Umumiy</span><span id="totalOut"></span></div>
+            <div class="summary-row"><span>USD hisobida</span><strong id="totalUsdOut"></strong></div>
           </div>
         </section>
 
         <footer class="footer">
-          <span><span data-i18n="rate">Kurs</span>: 1 USD = <span id="rateOut"></span> UZS</span>
-          <span><span data-i18n="signature">Imzo</span>: ____________________</span>
+          <span>Kurs: 1 USD = <span id="rateOut"></span> UZS</span>
+          <span>Imzo: ____________________</span>
         </footer>
       </article>
     </section>
   </main>
 
-  <template id="productTemplate">
-    <div class="product-editor">
-      <div class="product-head">
-        <strong data-i18n="product">Mahsulot</strong>
-        <button class="remove" type="button" data-i18n="remove">O'chirish</button>
-      </div>
-      <div class="field">
-        <label data-i18n="selectProduct">Saqlangan mahsulotdan tanlash</label>
-        <div class="picker-grid" data-product="catalogCards"></div>
-      </div>
-      <div class="grid-2">
-        <div class="field"><label data-i18n="productName">Mahsulot nomi</label><input data-product="name" placeholder="Avtoshampun"></div>
-        <div class="field"><label data-i18n="netKg">Mahsulot kg</label><input data-product="kg" type="number" min="0" step="0.01" value="20"></div>
-      </div>
-      <div class="grid-2">
-        <div class="field"><label data-i18n="canisterKg">Kanistr kg</label><input data-product="canisterKg" type="number" min="0" step="0.01" value="0.86"></div>
-        <div class="field"><label data-i18n="grossKg">Umumiy kg / dona</label><input data-product="grossKg" type="text" readonly></div>
-      </div>
-      <div class="grid-2">
-        <div class="field"><label data-i18n="qty">Soni</label><input data-product="qty" type="number" min="0" step="1" value="1"></div>
-        <div class="field"><label data-i18n="price">1 dona narxi</label><input data-product="price" type="number" min="0" step="0.01" value="0"></div>
-      </div>
-      <div class="field"><label data-i18n="currency">Valyuta</label><select data-product="currency"><option value="UZS">UZS</option><option value="USD">USD</option></select></div>
-    </div>
-  </template>
-
   <script>
-    const translations = {
-      uz: {
-        appTitle: 'Invoice Web App', appHint: 'Mahsulotlar va invoice avtomatik saqlanadi.',
-        invoiceInfo: 'Invoice', invoiceNo: 'Invoice raqami', date: 'Sana', dueDate: "To'lov sanasi",
-        usdRate: '1 USD kursi', seller: 'Sotuvchi', buyer: 'Oluvchi', logo: 'Logo',
-        brandName: 'Brend nomi', sellerName: 'Sotuvchi firma yoki F.I.Sh.', buyerName: 'Diller yoki magazin nomi',
-        phone: 'Telefon', taxId: 'STIR', addressBank: 'Manzil / bank', buyerAddress: 'Oluvchi manzili',
-        catalog: 'Mahsulot katalogi', productName: 'Mahsulot nomi', kg: 'Kg', netKg: 'Mahsulot kg', canisterKg: 'Kanistr kg', grossKg: 'Umumiy kg / dona', productImage: 'Mahsulot rasmi', saveProduct: 'Mahsulotni saqlash',
-        invoiceProducts: 'Invoice mahsulotlari', addRow: "+ Qator qo'shish", selectProduct: 'Saqlangan mahsulotdan tanlash',
-        product: 'Mahsulot', qty: 'Soni', price: 'Narx', currency: 'Valyuta', delivery: 'Dostavka',
-        deliveryType: 'Dostavka turi', free: 'Bepul', paid: 'Pullik', deliveryPrice: 'Dostavka narxi',
-        notes: 'Izoh', printPdf: 'Print / PDF', telegramSend: 'Telegramga yuborish',
-        clearInvoice: 'Invoice tozalash', clearAll: 'Hammasini tozalash', invoiceTitle: 'INVOICE',
-        lineTotal: 'Jami', itemsTotal: 'Mahsulotlar jami', totalWeight: 'Umumiy kg',
-        grandTotal: 'Umumiy', usdTotal: 'USD hisobida', rate: 'Kurs', signature: 'Imzo',
-        remove: "O'chirish", emptyCatalog: 'Hali mahsulot saqlanmagan', delete: "O'chirish"
-      },
-      ru: {
-        appTitle: 'Invoice Web App', appHint: 'Товары и инвойс сохраняются автоматически.',
-        invoiceInfo: 'Инвойс', invoiceNo: 'Номер инвойса', date: 'Дата', dueDate: 'Срок оплаты',
-        usdRate: 'Курс 1 USD', seller: 'Продавец', buyer: 'Покупатель', logo: 'Логотип',
-        brandName: 'Название бренда', sellerName: 'Компания или Ф.И.О. продавца', buyerName: 'Дилер или магазин',
-        phone: 'Телефон', taxId: 'ИНН', addressBank: 'Адрес / банк', buyerAddress: 'Адрес покупателя',
-        catalog: 'Каталог товаров', productName: 'Название товара', kg: 'Кг', netKg: 'Вес товара', canisterKg: 'Вес канистры', grossKg: 'Общий кг / шт', productImage: 'Фото товара', saveProduct: 'Сохранить товар',
-        invoiceProducts: 'Товары в инвойсе', addRow: '+ Добавить строку', selectProduct: 'Выбрать сохраненный товар',
-        product: 'Товар', qty: 'Кол-во', price: 'Цена', currency: 'Валюта', delivery: 'Доставка',
-        deliveryType: 'Тип доставки', free: 'Бесплатно', paid: 'Платно', deliveryPrice: 'Стоимость доставки',
-        notes: 'Примечание', printPdf: 'Печать / PDF', telegramSend: 'Отправить в Telegram',
-        clearInvoice: 'Очистить инвойс', clearAll: 'Очистить всё', invoiceTitle: 'ИНВОЙС',
-        lineTotal: 'Сумма', itemsTotal: 'Итого товары', totalWeight: 'Общий кг',
-        grandTotal: 'Итого', usdTotal: 'В USD', rate: 'Курс', signature: 'Подпись',
-        remove: 'Удалить', emptyCatalog: 'Товары еще не сохранены', delete: 'Удалить'
-      },
-      en: {
-        appTitle: 'Invoice Web App', appHint: 'Products and invoice are saved automatically.',
-        invoiceInfo: 'Invoice', invoiceNo: 'Invoice number', date: 'Date', dueDate: 'Payment due',
-        usdRate: '1 USD rate', seller: 'Seller', buyer: 'Buyer', logo: 'Logo',
-        brandName: 'Brand name', sellerName: 'Seller company or full name', buyerName: 'Dealer or store name',
-        phone: 'Phone', taxId: 'Tax ID', addressBank: 'Address / bank', buyerAddress: 'Buyer address',
-        catalog: 'Product catalog', productName: 'Product name', kg: 'Kg', netKg: 'Product kg', canisterKg: 'Canister kg', grossKg: 'Gross kg / unit', productImage: 'Product image', saveProduct: 'Save product',
-        invoiceProducts: 'Invoice products', addRow: '+ Add row', selectProduct: 'Select saved product',
-        product: 'Product', qty: 'Qty', price: 'Price', currency: 'Currency', delivery: 'Delivery',
-        deliveryType: 'Delivery type', free: 'Free', paid: 'Paid', deliveryPrice: 'Delivery price',
-        notes: 'Notes', printPdf: 'Print / PDF', telegramSend: 'Send to Telegram',
-        clearInvoice: 'Clear invoice', clearAll: 'Clear all', invoiceTitle: 'INVOICE',
-        lineTotal: 'Total', itemsTotal: 'Items total', totalWeight: 'Total kg',
-        grandTotal: 'Grand total', usdTotal: 'Total in USD', rate: 'Rate', signature: 'Signature',
-        remove: 'Remove', emptyCatalog: 'No saved products yet', delete: 'Delete'
-      }
-    };
+    const stateKey = 'telegramInvoiceWorkflowV1';
+    const legacyStateKey = 'telegramInvoiceStateV1';
+    const catalogKey = 'telegramInvoiceCatalogV1';
+    const dealerKey = 'telegramInvoiceDealersV1';
+    const logoKey = 'telegramInvoiceLogoV1';
+    const money = new Intl.NumberFormat('uz-UZ', { maximumFractionDigits: 2 });
 
-    const ids = [
-      'language', 'invoiceNo', 'invoiceDate', 'dueDate', 'usdRate', 'sellerBrand', 'sellerName',
-      'sellerPhone', 'sellerTax', 'sellerAddress', 'buyerName', 'buyerPhone', 'buyerTax',
-      'buyerAddress', 'deliveryType', 'deliveryCurrency', 'deliveryPrice', 'notes'
+    const fields = [
+      'language', 'invoiceNo', 'invoiceDate', 'dueDate', 'usdRate',
+      'sellerBrand', 'sellerName', 'sellerPhone', 'sellerTax', 'sellerAddress',
+      'deliveryType', 'deliveryCurrency', 'deliveryPrice', 'notes'
     ];
 
-    const productBox = document.querySelector('#products');
-    const productTemplate = document.querySelector('#productTemplate');
-    const invoiceRows = document.querySelector('#invoiceRows');
-    const catalogList = document.querySelector('#catalogList');
-    const money = new Intl.NumberFormat('uz-UZ', { maximumFractionDigits: 2 });
-    const stateKey = 'telegramInvoiceStateV1';
-    const logoKey = 'telegramInvoiceLogoV1';
-    const catalogKey = 'telegramInvoiceCatalogV1';
-
     let catalog = [];
+    let dealers = [];
+    let invoiceItems = [];
+    let selectedDealerId = '';
     let pendingCatalogImage = '';
+
+    const $ = (selector) => document.querySelector(selector);
 
     function setupTelegram() {
       const tg = window.Telegram && window.Telegram.WebApp;
@@ -684,9 +549,13 @@
       tg.setBackgroundColor('#eef7ff');
     }
 
-    function t(key) {
-      const lang = document.querySelector('#language').value || 'uz';
-      return translations[lang][key] || translations.uz[key] || key;
+    function uid() {
+      return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    }
+
+    function numberValue(value) {
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? parsed : 0;
     }
 
     function todayIso() {
@@ -695,14 +564,7 @@
 
     function formatDate(value) {
       if (!value) return '-';
-      const date = new Date(value + 'T00:00:00');
-      const lang = document.querySelector('#language').value;
-      return date.toLocaleDateString(lang === 'ru' ? 'ru-RU' : lang === 'en' ? 'en-US' : 'uz-UZ');
-    }
-
-    function numberValue(value) {
-      const parsed = Number(value);
-      return Number.isFinite(parsed) ? parsed : 0;
+      return new Date(value + 'T00:00:00').toLocaleDateString('uz-UZ');
     }
 
     function formatMoney(value, currency) {
@@ -717,212 +579,24 @@
       return rate > 0 ? value / rate : 0;
     }
 
-    function readProducts() {
-      return Array.from(productBox.querySelectorAll('.product-editor')).map((item) => ({
-        name: item.querySelector('[data-product="name"]').value.trim(),
-        kg: numberValue(item.querySelector('[data-product="kg"]').value),
-        canisterKg: numberValue(item.querySelector('[data-product="canisterKg"]').value),
-        qty: numberValue(item.querySelector('[data-product="qty"]').value),
-        price: numberValue(item.querySelector('[data-product="price"]').value),
-        currency: item.querySelector('[data-product="currency"]').value,
-        image: (catalog.find((product) => product.name === item.querySelector('[data-product="name"]').value.trim()) || {}).image || ''
-      }));
+    function activeDealer() {
+      return dealers.find((dealer) => dealer.id === selectedDealerId) || null;
     }
 
-    function buildInvoiceText() {
-      const products = readProducts()
-        .map((product, index) => {
-          const rowTotal = product.qty * product.price;
-          return `${index + 1}. ${product.name || '-'} | ${money.format(product.kg)} kg + ${money.format(product.canisterKg)} kg | ${money.format(product.qty)} x ${formatMoney(product.price, product.currency)} = ${formatMoney(rowTotal, product.currency)}`;
-        })
-        .join('\n');
-
-      return [
-        `Invoice: ${document.querySelector('#invoiceNo').value}`,
-        `Sana: ${formatDate(document.querySelector('#invoiceDate').value)}`,
-        `Sotuvchi: ${document.querySelector('#sellerName').value}`,
-        `Oluvchi: ${document.querySelector('#buyerName').value}`,
-        '',
-        products,
-        '',
-        `${t('delivery')}: ${document.querySelector('#deliveryOut').textContent}`,
-        `${t('grandTotal')}: ${document.querySelector('#totalOut').textContent}`,
-        `${t('usdTotal')}: ${document.querySelector('#totalUsdOut').textContent}`,
-        `${t('notes')}: ${document.querySelector('#notes').value || '-'}`
-      ].join('\n');
-    }
-
-    function saveCatalog() {
-      localStorage.setItem(catalogKey, JSON.stringify(catalog));
+    function cleanItems() {
+      return invoiceItems.filter((item) => item.name && item.qty > 0);
     }
 
     function saveState() {
-      const data = {};
-      ids.forEach((id) => { data[id] = document.querySelector('#' + id).value; });
-      data.products = readProducts();
-      data.logo = localStorage.getItem(logoKey) || '';
-      localStorage.setItem(stateKey, JSON.stringify(data));
-    }
-
-    function applyTranslations() {
-      document.documentElement.lang = document.querySelector('#language').value;
-      document.querySelectorAll('[data-i18n]').forEach((node) => {
-        node.textContent = t(node.dataset.i18n);
-      });
-    }
-
-    function renderCatalog() {
-      catalogList.innerHTML = '';
-      if (!catalog.length) {
-        const empty = document.createElement('div');
-        empty.className = 'catalog-item';
-        empty.textContent = t('emptyCatalog');
-        catalogList.appendChild(empty);
-      }
-
-      catalog.forEach((item, index) => {
-        const row = document.createElement('div');
-        row.className = 'catalog-item';
-        row.innerHTML = `
-          <div class="catalog-photo">${item.image ? `<img src="${item.image}" alt="">` : t('productImage')}</div>
-          <div><strong>${item.name}</strong><br><span>${money.format(item.kg)} kg + ${money.format(item.canisterKg || 0)} kg</span></div>
-        `;
-        const remove = document.createElement('button');
-        remove.className = 'remove';
-        remove.type = 'button';
-        remove.textContent = t('delete');
-        remove.addEventListener('click', () => {
-          catalog.splice(index, 1);
-          saveCatalog();
-          refreshProductCards();
-          render();
-        });
-        row.appendChild(remove);
-        catalogList.appendChild(row);
-      });
-    }
-
-    function chooseCatalogProduct(node, item) {
-      node.querySelector('[data-product="name"]').value = item.name;
-      node.querySelector('[data-product="kg"]').value = item.kg;
-      node.querySelector('[data-product="canisterKg"]').value = item.canisterKg || 0;
-      node.dataset.selectedProduct = item.name;
-      render();
-    }
-
-    function fillProductCards(container, node) {
-      const selectedName = node.dataset.selectedProduct || node.querySelector('[data-product="name"]').value;
-      container.innerHTML = '';
-      catalog.forEach((item) => {
-        const card = document.createElement('button');
-        card.className = `product-card${item.name === selectedName ? ' active' : ''}`;
-        card.type = 'button';
-        card.innerHTML = `
-          <div class="catalog-photo">${item.image ? `<img src="${item.image}" alt="">` : t('productImage')}</div>
-          <strong>${item.name}</strong>
-          <span>${money.format(item.kg)} kg + ${money.format(item.canisterKg || 0)} kg</span>
-        `;
-        card.addEventListener('click', () => chooseCatalogProduct(node, item));
-        container.appendChild(card);
-      });
-    }
-
-    function refreshProductCards() {
-      productBox.querySelectorAll('.product-editor').forEach((node) => {
-        const grossInput = node.querySelector('[data-product="grossKg"]');
-        if (grossInput) {
-          const kg = numberValue(node.querySelector('[data-product="kg"]').value);
-          const canisterKg = numberValue(node.querySelector('[data-product="canisterKg"]').value);
-          grossInput.value = `${money.format(kg + canisterKg)} kg`;
-        }
-        fillProductCards(node.querySelector('[data-product="catalogCards"]'), node);
-      });
-    }
-
-    function render() {
-      applyTranslations();
-      renderCatalog();
-      refreshProductCards();
-
-      ids.forEach((id) => {
-        document.querySelectorAll(`[data-out="${id}"]`).forEach((node) => {
-          const value = document.querySelector('#' + id).value;
-          node.textContent = id.includes('Date') ? formatDate(value) : (value || '-');
-        });
-      });
-
-      const rate = Math.max(numberValue(document.querySelector('#usdRate').value), 0);
-      const products = readProducts();
-      let subtotalUzs = 0;
-      let totalWeight = 0;
-
-      invoiceRows.innerHTML = '';
-      products.forEach((product) => {
-        const rowTotal = product.qty * product.price;
-        subtotalUzs += toUzs(rowTotal, product.currency, rate);
-        totalWeight += product.qty * (product.kg + product.canisterKg);
-
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>
-            <div class="brand">
-              <div class="card-photo">${product.image ? `<img src="${product.image}" alt="">` : t('productImage')}</div>
-              <strong>${product.name || '-'}</strong>
-            </div>
-          </td>
-          <td class="right">${money.format(product.kg)}</td>
-          <td class="right">${money.format(product.canisterKg)}</td>
-          <td class="right">${money.format(product.qty)}</td>
-          <td class="right">${formatMoney(product.price, product.currency)}</td>
-          <td class="right"><strong>${formatMoney(rowTotal, product.currency)}</strong></td>
-        `;
-        invoiceRows.appendChild(tr);
-      });
-
-      const deliveryType = document.querySelector('#deliveryType').value;
-      const deliveryCurrency = document.querySelector('#deliveryCurrency').value;
-      const deliveryRaw = deliveryType === 'paid' ? numberValue(document.querySelector('#deliveryPrice').value) : 0;
-      const deliveryUzs = toUzs(deliveryRaw, deliveryCurrency, rate);
-      const totalUzs = subtotalUzs + deliveryUzs;
-
-      document.querySelector('#subtotalOut').textContent = formatMoney(subtotalUzs, 'UZS');
-      document.querySelector('#weightOut').textContent = `${money.format(totalWeight)} kg`;
-      document.querySelector('#deliveryOut').textContent = deliveryType === 'free' ? t('free') : formatMoney(deliveryRaw, deliveryCurrency);
-      document.querySelector('#totalOut').textContent = formatMoney(totalUzs, 'UZS');
-      document.querySelector('#totalUsdOut').textContent = formatMoney(fromUzs(totalUzs, rate), 'USD');
-      document.querySelector('#rateOut').textContent = money.format(rate);
-      saveState();
-    }
-
-    function addProduct(product = {}) {
-      const node = productTemplate.content.firstElementChild.cloneNode(true);
-      node.dataset.selectedProduct = product.name || '';
-      node.querySelector('[data-product="name"]').value = product.name || '';
-      node.querySelector('[data-product="kg"]').value = product.kg ?? 20;
-      node.querySelector('[data-product="canisterKg"]').value = product.canisterKg ?? 0.86;
-      node.querySelector('[data-product="qty"]').value = product.qty ?? 1;
-      node.querySelector('[data-product="price"]').value = product.price ?? 0;
-      node.querySelector('[data-product="currency"]').value = product.currency || 'UZS';
-
-      node.querySelector('.remove').addEventListener('click', () => {
-        if (productBox.children.length > 1) {
-          node.remove();
-          render();
-        }
-      });
-
-      node.querySelectorAll('input, select').forEach((input) => {
-        input.addEventListener('input', render);
-        input.addEventListener('change', render);
-      });
-
-      productBox.appendChild(node);
-      fillProductCards(node.querySelector('[data-product="catalogCards"]'), node);
-      render();
+      const form = {};
+      fields.forEach((id) => { form[id] = $('#' + id).value; });
+      localStorage.setItem(stateKey, JSON.stringify({ form, invoiceItems, selectedDealerId }));
+      localStorage.setItem(catalogKey, JSON.stringify(catalog));
+      localStorage.setItem(dealerKey, JSON.stringify(dealers));
     }
 
     function setLogo(dataUrl) {
-      const preview = document.querySelector('#logoPreview');
+      const preview = $('#logoPreview');
       if (!dataUrl) {
         preview.textContent = 'Logo';
         return;
@@ -934,52 +608,305 @@
       preview.appendChild(img);
     }
 
-    function resetInvoiceRows() {
-      productBox.innerHTML = '';
-      addProduct({ name: '', kg: 20, canisterKg: 0.86, qty: 1, price: 0, currency: 'UZS' });
+    function renderCardPhoto(image) {
+      return `<div class="photo">${image ? `<img src="${image}" alt="">` : 'Rasm'}</div>`;
+    }
+
+    function renderCatalog() {
+      const list = $('#catalogList');
+      const picker = $('#productPicker');
+      list.innerHTML = '';
+      picker.innerHTML = '';
+
+      if (!catalog.length) {
+        list.innerHTML = '<div class="mini-card"><strong>Mahsulot yoq</strong><span>Ombor bolimida mahsulot qoshing</span></div>';
+        picker.innerHTML = '<div class="mini-card"><strong>Mahsulot yoq</strong><span>Avval omborga mahsulot qoshing</span></div>';
+        return;
+      }
+
+      catalog.forEach((product) => {
+        const info = `${money.format(product.kg)} kg + ${money.format(product.canisterKg || 0)} kg`;
+
+        const card = document.createElement('div');
+        card.className = 'mini-card';
+        card.innerHTML = `${renderCardPhoto(product.image)}<strong>${product.name}</strong><span>${info}</span>`;
+        const remove = document.createElement('button');
+        remove.className = 'remove icon-btn';
+        remove.type = 'button';
+        remove.textContent = 'Ochirish';
+        remove.addEventListener('click', () => {
+          catalog = catalog.filter((item) => item.id !== product.id);
+          invoiceItems = invoiceItems.filter((item) => item.productId !== product.id);
+          render();
+        });
+        card.appendChild(remove);
+        list.appendChild(card);
+
+        const pick = document.createElement('button');
+        pick.className = 'mini-card';
+        pick.type = 'button';
+        pick.innerHTML = `${renderCardPhoto(product.image)}<strong>${product.name}</strong><span>${info}</span>`;
+        pick.addEventListener('click', () => addInvoiceItem(product));
+        picker.appendChild(pick);
+      });
+    }
+
+    function renderDealers() {
+      const list = $('#dealerList');
+      const picker = $('#dealerPicker');
+      list.innerHTML = '';
+      picker.innerHTML = '';
+
+      if (!dealers.length) {
+        list.innerHTML = '<div class="mini-card"><strong>Diller yoq</strong><span>Dillerlar bolimida qoshing</span></div>';
+        picker.innerHTML = '<div class="mini-card"><strong>Diller yoq</strong><span>Invoice uchun diller qoshing</span></div>';
+        return;
+      }
+
+      dealers.forEach((dealer) => {
+        const detail = [dealer.phone, dealer.address].filter(Boolean).join(' | ') || '-';
+
+        const card = document.createElement('div');
+        card.className = 'mini-card';
+        card.innerHTML = `<strong>${dealer.name}</strong><span>${detail}</span>`;
+        const remove = document.createElement('button');
+        remove.className = 'remove icon-btn';
+        remove.type = 'button';
+        remove.textContent = 'Ochirish';
+        remove.addEventListener('click', () => {
+          dealers = dealers.filter((item) => item.id !== dealer.id);
+          if (selectedDealerId === dealer.id) selectedDealerId = '';
+          render();
+        });
+        card.appendChild(remove);
+        list.appendChild(card);
+
+        const pick = document.createElement('button');
+        pick.className = `mini-card${selectedDealerId === dealer.id ? ' active' : ''}`;
+        pick.type = 'button';
+        pick.innerHTML = `<strong>${dealer.name}</strong><span>${detail}</span>`;
+        pick.addEventListener('click', () => {
+          selectedDealerId = dealer.id;
+          render();
+        });
+        picker.appendChild(pick);
+      });
+    }
+
+    function addInvoiceItem(product) {
+      const existing = invoiceItems.find((item) => item.productId === product.id);
+      if (existing) {
+        existing.qty += 1;
+      } else {
+        invoiceItems.push({
+          id: uid(),
+          productId: product.id,
+          name: product.name,
+          kg: product.kg,
+          canisterKg: product.canisterKg || 0,
+          image: product.image || '',
+          qty: 1,
+          price: 0,
+          currency: 'UZS'
+        });
+      }
+      render();
+    }
+
+    function updateItem(id, key, value) {
+      const item = invoiceItems.find((line) => line.id === id);
+      if (!item) return;
+      item[key] = key === 'currency' ? value : numberValue(value);
+      render();
+    }
+
+    function removeItem(id) {
+      invoiceItems = invoiceItems.filter((item) => item.id !== id);
+      render();
+    }
+
+    function renderInvoiceLines() {
+      const box = $('#invoiceLines');
+      box.innerHTML = '';
+      if (!invoiceItems.length) {
+        box.innerHTML = '<div class="mini-card"><strong>Mahsulot tanlanmagan</strong><span>Yuqoridagi kartochkadan mahsulot tanlang</span></div>';
+        return;
+      }
+
+      invoiceItems.forEach((item) => {
+        const row = document.createElement('div');
+        row.className = 'invoice-line';
+        row.innerHTML = `
+          <div class="line-title">
+            <div class="line-photo">${item.image ? `<img src="${item.image}" alt="">` : 'Rasm'}</div>
+            <div><strong>${item.name}</strong><span>${money.format(item.kg)} kg + ${money.format(item.canisterKg)} kg</span></div>
+          </div>
+          <div><label>Soni</label><input type="number" min="0" step="1" value="${item.qty}" data-line="${item.id}" data-key="qty"></div>
+          <div><label>Narx</label><input type="number" min="0" step="0.01" value="${item.price}" data-line="${item.id}" data-key="price"></div>
+          <div><label>Valyuta</label><select data-line="${item.id}" data-key="currency"><option value="UZS"${item.currency === 'UZS' ? ' selected' : ''}>UZS</option><option value="USD"${item.currency === 'USD' ? ' selected' : ''}>USD</option></select></div>
+          <button class="icon-btn" type="button" data-remove="${item.id}">X</button>
+        `;
+        box.appendChild(row);
+      });
+
+      box.querySelectorAll('[data-line]').forEach((input) => {
+        input.addEventListener('input', () => updateItem(input.dataset.line, input.dataset.key, input.value));
+        input.addEventListener('change', () => updateItem(input.dataset.line, input.dataset.key, input.value));
+      });
+      box.querySelectorAll('[data-remove]').forEach((button) => {
+        button.addEventListener('click', () => removeItem(button.dataset.remove));
+      });
+    }
+
+    function renderPreview() {
+      fields.forEach((id) => {
+        document.querySelectorAll(`[data-out="${id}"]`).forEach((node) => {
+          const value = $('#' + id).value;
+          node.textContent = id.includes('Date') ? formatDate(value) : (value || '-');
+        });
+      });
+
+      const dealer = activeDealer();
+      const buyer = dealer || {};
+      $('[data-out="buyerName"]').textContent = buyer.name || '-';
+      $('[data-out="buyerPhone"]').textContent = buyer.phone || '-';
+      $('[data-out="buyerTax"]').textContent = buyer.tax || '-';
+      $('[data-out="buyerAddress"]').textContent = buyer.address || '-';
+
+      const rate = Math.max(numberValue($('#usdRate').value), 0);
+      let subtotalUzs = 0;
+      let totalWeight = 0;
+      $('#invoiceRows').innerHTML = '';
+
+      cleanItems().forEach((item) => {
+        const rowTotal = item.qty * item.price;
+        subtotalUzs += toUzs(rowTotal, item.currency, rate);
+        totalWeight += item.qty * (item.kg + item.canisterKg);
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><div class="brand"><div class="line-photo">${item.image ? `<img src="${item.image}" alt="">` : 'Rasm'}</div><strong>${item.name}</strong></div></td>
+          <td class="right">${money.format(item.kg)}</td>
+          <td class="right">${money.format(item.canisterKg)}</td>
+          <td class="right">${money.format(item.qty)}</td>
+          <td class="right">${formatMoney(item.price, item.currency)}</td>
+          <td class="right"><strong>${formatMoney(rowTotal, item.currency)}</strong></td>
+        `;
+        $('#invoiceRows').appendChild(tr);
+      });
+
+      const deliveryType = $('#deliveryType').value;
+      const deliveryRaw = deliveryType === 'paid' ? numberValue($('#deliveryPrice').value) : 0;
+      const deliveryCurrency = $('#deliveryCurrency').value;
+      const deliveryUzs = toUzs(deliveryRaw, deliveryCurrency, rate);
+      const totalUzs = subtotalUzs + deliveryUzs;
+
+      $('#subtotalOut').textContent = formatMoney(subtotalUzs, 'UZS');
+      $('#weightOut').textContent = `${money.format(totalWeight)} kg`;
+      $('#deliveryOut').textContent = deliveryType === 'free' ? 'Bepul' : formatMoney(deliveryRaw, deliveryCurrency);
+      $('#totalOut').textContent = formatMoney(totalUzs, 'UZS');
+      $('#totalUsdOut').textContent = formatMoney(fromUzs(totalUzs, rate), 'USD');
+      $('#rateOut').textContent = money.format(rate);
+    }
+
+    function buildInvoiceText() {
+      const dealer = activeDealer();
+      const products = cleanItems()
+        .map((item, index) => {
+          const rowTotal = item.qty * item.price;
+          return `${index + 1}. ${item.name} | ${money.format(item.kg)} kg + ${money.format(item.canisterKg)} kg | ${money.format(item.qty)} x ${formatMoney(item.price, item.currency)} = ${formatMoney(rowTotal, item.currency)}`;
+        })
+        .join('\n');
+
+      return [
+        `Invoice: ${$('#invoiceNo').value}`,
+        `Sana: ${formatDate($('#invoiceDate').value)}`,
+        `Sotuvchi: ${$('#sellerName').value}`,
+        `Oluvchi: ${dealer ? dealer.name : '-'}`,
+        '',
+        products || 'Mahsulot tanlanmagan',
+        '',
+        `Dostavka: ${$('#deliveryOut').textContent}`,
+        `Umumiy: ${$('#totalOut').textContent}`,
+        `USD hisobida: ${$('#totalUsdOut').textContent}`,
+        `Izoh: ${$('#notes').value || '-'}`
+      ].join('\n');
+    }
+
+    function render() {
+      renderCatalog();
+      renderDealers();
+      renderInvoiceLines();
+      renderPreview();
+      saveState();
     }
 
     function loadState() {
-      catalog = JSON.parse(localStorage.getItem(catalogKey) || '[]');
-      catalog = catalog.map((item) => ({
+      catalog = JSON.parse(localStorage.getItem(catalogKey) || '[]').map((item) => ({
+        id: item.id || uid(),
         name: item.name || '',
         kg: numberValue(item.kg),
         canisterKg: numberValue(item.canisterKg),
         image: item.image || ''
-      }));
-      const oldSaved = localStorage.getItem('invoiceGeneratorDataV2') || localStorage.getItem('invoiceGeneratorData');
-      const saved = localStorage.getItem(stateKey) || oldSaved;
-      const data = saved ? JSON.parse(saved) : {};
+      })).filter((item) => item.name);
 
-      ids.forEach((id) => {
-        if (data[id] !== undefined) document.querySelector('#' + id).value = data[id];
+      dealers = JSON.parse(localStorage.getItem(dealerKey) || '[]');
+      const state = JSON.parse(localStorage.getItem(stateKey) || 'null');
+      const legacy = JSON.parse(localStorage.getItem(legacyStateKey) || 'null');
+      const data = state || {};
+      const form = data.form || legacy || {};
+
+      fields.forEach((id) => {
+        if (form[id] !== undefined && $('#' + id)) $('#' + id).value = form[id];
       });
 
-      if (!document.querySelector('#invoiceDate').value) document.querySelector('#invoiceDate').value = todayIso();
-      if (!document.querySelector('#dueDate').value) {
+      if (!$('#invoiceDate').value) $('#invoiceDate').value = todayIso();
+      if (!$('#dueDate').value) {
         const date = new Date();
         date.setDate(date.getDate() + 7);
-        document.querySelector('#dueDate').value = date.toISOString().slice(0, 10);
+        $('#dueDate').value = date.toISOString().slice(0, 10);
       }
 
-      const products = Array.isArray(data.products) && data.products.length
-        ? data.products
-        : [{ name: '', kg: 20, canisterKg: 0.86, qty: 1, price: 0, currency: 'UZS' }];
-      productBox.innerHTML = '';
-      products.forEach(addProduct);
-      setLogo(data.logo || localStorage.getItem(logoKey) || localStorage.getItem('invoiceLogoV2') || localStorage.getItem('invoiceLogo') || '');
+      if (Array.isArray(data.invoiceItems)) {
+        invoiceItems = data.invoiceItems;
+      } else if (Array.isArray(legacy && legacy.products)) {
+        invoiceItems = legacy.products.filter((item) => item.name).map((item) => ({
+          id: uid(),
+          productId: '',
+          name: item.name,
+          kg: numberValue(item.kg),
+          canisterKg: numberValue(item.canisterKg),
+          image: item.image || '',
+          qty: numberValue(item.qty),
+          price: numberValue(item.price),
+          currency: item.currency || 'UZS'
+        }));
+      }
+
+      selectedDealerId = data.selectedDealerId || '';
+      setLogo(form.logo || localStorage.getItem(logoKey) || localStorage.getItem('invoiceLogoV2') || localStorage.getItem('invoiceLogo') || '');
     }
 
-    ids.forEach((id) => {
-      const input = document.querySelector('#' + id);
+    document.querySelectorAll('.tab-btn').forEach((button) => {
+      button.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach((item) => item.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach((item) => item.classList.remove('active'));
+        button.classList.add('active');
+        $(`#tab-${button.dataset.tab}`).classList.add('active');
+      });
+    });
+
+    fields.forEach((id) => {
+      const input = $('#' + id);
+      if (!input) return;
       input.addEventListener('input', render);
       input.addEventListener('change', render);
     });
 
-    document.querySelector('#saveCatalogProduct').addEventListener('click', () => {
-      const name = document.querySelector('#catalogName').value.trim();
-      const kg = numberValue(document.querySelector('#catalogKg').value);
-      const canisterKg = numberValue(document.querySelector('#catalogCanisterKg').value);
+    $('#saveCatalogProduct').addEventListener('click', () => {
+      const name = $('#catalogName').value.trim();
+      const kg = numberValue($('#catalogKg').value);
+      const canisterKg = numberValue($('#catalogCanisterKg').value);
       if (!name || kg <= 0) return;
       const existing = catalog.find((item) => item.name.toLowerCase() === name.toLowerCase());
       if (existing) {
@@ -987,95 +914,102 @@
         existing.canisterKg = canisterKg;
         if (pendingCatalogImage) existing.image = pendingCatalogImage;
       } else {
-        catalog.push({ name, kg, canisterKg, image: pendingCatalogImage });
+        catalog.push({ id: uid(), name, kg, canisterKg, image: pendingCatalogImage });
       }
-      document.querySelector('#catalogName').value = '';
-      document.querySelector('#catalogKg').value = '';
-      document.querySelector('#catalogCanisterKg').value = '';
-      document.querySelector('#catalogImage').value = '';
+      $('#catalogName').value = '';
+      $('#catalogKg').value = '';
+      $('#catalogCanisterKg').value = '';
+      $('#catalogImage').value = '';
       pendingCatalogImage = '';
-      saveCatalog();
       render();
     });
 
-    document.querySelector('#catalogImage').addEventListener('change', (event) => {
+    $('#catalogImage').addEventListener('change', (event) => {
       const file = event.target.files[0];
       if (!file) return;
       const reader = new FileReader();
-      reader.onload = () => {
-        pendingCatalogImage = reader.result;
-      };
+      reader.onload = () => { pendingCatalogImage = reader.result; };
       reader.readAsDataURL(file);
     });
 
-    document.querySelector('#addProduct').addEventListener('click', () => addProduct());
-    document.querySelector('#printBtn').addEventListener('click', () => window.print());
-    document.querySelector('#telegramBtn').addEventListener('click', () => {
-      const tg = window.Telegram && window.Telegram.WebApp;
-      const text = buildInvoiceText();
-      const payload = {
-        invoiceNo: document.querySelector('#invoiceNo').value,
-        buyer: document.querySelector('#buyerName').value,
-        products: readProducts(),
-        total: document.querySelector('#totalOut').textContent,
-        text
+    $('#saveDealer').addEventListener('click', () => {
+      const name = $('#dealerName').value.trim();
+      if (!name) return;
+      const dealer = {
+        id: uid(),
+        name,
+        phone: $('#dealerPhone').value.trim(),
+        tax: $('#dealerTax').value.trim(),
+        address: $('#dealerAddress').value.trim()
       };
-
-      if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id) {
-        fetch('/api/send-invoice', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            userId: tg.initDataUnsafe.user.id,
-            payload
-          })
-        })
-          .then((response) => response.json())
-          .then((result) => {
-            if (!result.ok) throw new Error(result.error || 'Telegramga yuborilmadi');
-            tg.showAlert('Invoice Telegram chatga yuborildi.');
-          })
-          .catch((error) => {
-            tg.showAlert(`Xatolik: ${error.message}`);
-          });
-        return;
-      }
-
-      if (navigator.share) {
-        navigator.share({ title: 'Invoice', text });
-        return;
-      }
-
-      navigator.clipboard.writeText(text).then(() => {
-        alert('Invoice matni copy qilindi. Telegram chatga paste qilib yuborishingiz mumkin.');
-      });
-    });
-    document.querySelector('#clearInvoiceBtn').addEventListener('click', () => {
-      resetInvoiceRows();
-      document.querySelector('#buyerName').value = '';
-      document.querySelector('#buyerPhone').value = '';
-      document.querySelector('#buyerTax').value = '';
-      document.querySelector('#buyerAddress').value = '';
-      document.querySelector('#notes').value = '';
+      const existing = dealers.find((item) => item.name.toLowerCase() === name.toLowerCase());
+      if (existing) Object.assign(existing, dealer, { id: existing.id });
+      else dealers.push(dealer);
+      $('#dealerName').value = '';
+      $('#dealerPhone').value = '';
+      $('#dealerTax').value = '';
+      $('#dealerAddress').value = '';
+      if (!selectedDealerId) selectedDealerId = (existing || dealer).id;
       render();
     });
-    document.querySelector('#clearAllBtn').addEventListener('click', () => {
-      localStorage.removeItem(stateKey);
-      localStorage.removeItem(logoKey);
-      localStorage.removeItem(catalogKey);
-      location.reload();
-    });
 
-    document.querySelector('#logoInput').addEventListener('change', (event) => {
+    $('#logoInput').addEventListener('change', (event) => {
       const file = event.target.files[0];
       if (!file) return;
       const reader = new FileReader();
       reader.onload = () => {
         localStorage.setItem(logoKey, reader.result);
         setLogo(reader.result);
-        saveState();
+        render();
       };
       reader.readAsDataURL(file);
+    });
+
+    $('#printBtn').addEventListener('click', () => window.print());
+
+    $('#telegramBtn').addEventListener('click', () => {
+      const tg = window.Telegram && window.Telegram.WebApp;
+      const payload = {
+        invoiceNo: $('#invoiceNo').value,
+        buyer: activeDealer() ? activeDealer().name : '',
+        products: cleanItems(),
+        total: $('#totalOut').textContent,
+        text: buildInvoiceText()
+      };
+
+      if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id) {
+        fetch('/api/send-invoice', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: tg.initDataUnsafe.user.id, payload })
+        })
+          .then((response) => response.json())
+          .then((result) => {
+            if (!result.ok) throw new Error(result.error || 'Telegramga yuborilmadi');
+            tg.showAlert('Invoice Telegram chatga yuborildi.');
+          })
+          .catch((error) => tg.showAlert(`Xatolik: ${error.message}`));
+        return;
+      }
+
+      navigator.clipboard.writeText(payload.text).then(() => {
+        alert('Invoice matni copy qilindi.');
+      });
+    });
+
+    $('#clearInvoiceBtn').addEventListener('click', () => {
+      invoiceItems = [];
+      selectedDealerId = '';
+      $('#notes').value = '';
+      render();
+    });
+
+    $('#clearAllBtn').addEventListener('click', () => {
+      localStorage.removeItem(stateKey);
+      localStorage.removeItem(catalogKey);
+      localStorage.removeItem(dealerKey);
+      localStorage.removeItem(logoKey);
+      location.reload();
     });
 
     setupTelegram();
