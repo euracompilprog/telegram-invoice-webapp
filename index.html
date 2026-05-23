@@ -188,6 +188,30 @@
     .mini-card strong { display: block; font-size: 13px; }
     .mini-card span { display: block; margin-top: 3px; color: var(--muted); font-size: 12px; }
 
+    .card-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .small-btn {
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      padding: 7px 8px;
+      background: #fff;
+      color: #0d477e;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .small-btn.danger {
+      color: var(--danger);
+      background: #fff7f5;
+      border-color: #ffd0ca;
+    }
+
     .photo {
       width: 100%;
       aspect-ratio: 4 / 3;
@@ -310,6 +334,8 @@
     .note-box { padding: 12px; min-height: 112px; }
     .summary { overflow: hidden; }
     .summary-row { display: flex; justify-content: space-between; gap: 12px; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+    .summary-label { display: inline-flex; align-items: center; gap: 8px; }
+    .summary-icon { width: 24px; height: 24px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; background: var(--soft); color: var(--accent-dark); font-size: 14px; }
     .summary-row:last-child { border-bottom: 0; }
     .summary-row.total { color: #fff; background: linear-gradient(135deg, #55b6ff, var(--accent)); font-weight: 900; font-size: 18px; }
     .footer { display: flex; justify-content: space-between; gap: 18px; margin-top: 22px; padding-top: 15px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
@@ -489,7 +515,6 @@
             <tr>
               <th>Mahsulot nomi</th>
               <th class="right">Mahsulot kg</th>
-              <th class="right">Kanistr kg</th>
               <th class="right">Soni</th>
               <th class="right">Narx</th>
               <th class="right">Jami</th>
@@ -504,9 +529,9 @@
             <div class="muted" data-out="notes"></div>
           </div>
           <div class="summary">
-            <div class="summary-row"><span>Mahsulotlar jami</span><strong id="subtotalOut"></strong></div>
-            <div class="summary-row"><span>Umumiy kg</span><strong id="weightOut"></strong></div>
-            <div class="summary-row"><span>Dostavka</span><strong id="deliveryOut"></strong></div>
+            <div class="summary-row"><span class="summary-label"><span class="summary-icon">$</span>Mahsulotlar jami</span><strong id="subtotalOut"></strong></div>
+            <div class="summary-row"><span class="summary-label"><span class="summary-icon">kg</span>Umumiy kg</span><strong id="weightOut"></strong></div>
+            <div class="summary-row"><span class="summary-label"><span class="summary-icon">↗</span>Dostavka</span><strong id="deliveryOut"></strong></div>
             <div class="summary-row total"><span>Umumiy</span><span id="totalOut"></span></div>
             <div class="summary-row"><span>USD hisobida</span><strong id="totalUsdOut"></strong></div>
           </div>
@@ -539,6 +564,8 @@
     let invoiceItems = [];
     let selectedDealerId = '';
     let pendingCatalogImage = '';
+    let editingProductId = '';
+    let editingDealerId = '';
 
     const $ = (selector) => document.querySelector(selector);
 
@@ -602,6 +629,60 @@
       saveState();
     }
 
+    function updateInvoiceItemsFromProduct(product) {
+      invoiceItems.forEach((item) => {
+        if (item.productId !== product.id) return;
+        item.name = product.name;
+        item.kg = product.kg;
+        item.canisterKg = product.canisterKg || 0;
+        item.image = product.image || '';
+      });
+    }
+
+    function resetProductForm() {
+      editingProductId = '';
+      $('#catalogName').value = '';
+      $('#catalogKg').value = '';
+      $('#catalogCanisterKg').value = '';
+      $('#catalogImage').value = '';
+      pendingCatalogImage = '';
+      $('#saveCatalogProduct').textContent = 'Mahsulotni saqlash';
+    }
+
+    function resetDealerForm() {
+      editingDealerId = '';
+      $('#dealerName').value = '';
+      $('#dealerPhone').value = '';
+      $('#dealerTax').value = '';
+      $('#dealerAddress').value = '';
+      $('#saveDealer').textContent = 'Dillerni saqlash';
+    }
+
+    function editProduct(id) {
+      const product = catalog.find((item) => item.id === id);
+      if (!product) return;
+      editingProductId = id;
+      pendingCatalogImage = '';
+      $('#catalogName').value = product.name;
+      $('#catalogKg').value = product.kg;
+      $('#catalogCanisterKg').value = product.canisterKg || 0;
+      $('#catalogImage').value = '';
+      $('#saveCatalogProduct').textContent = 'Mahsulotni yangilash';
+      document.querySelector('[data-tab="warehouse"]').click();
+    }
+
+    function editDealer(id) {
+      const dealer = dealers.find((item) => item.id === id);
+      if (!dealer) return;
+      editingDealerId = id;
+      $('#dealerName').value = dealer.name;
+      $('#dealerPhone').value = dealer.phone || '';
+      $('#dealerTax').value = dealer.tax || '';
+      $('#dealerAddress').value = dealer.address || '';
+      $('#saveDealer').textContent = 'Dillerni yangilash';
+      document.querySelector('[data-tab="dealers"]').click();
+    }
+
     function setLogo(dataUrl) {
       const preview = $('#logoPreview');
       if (!dataUrl) {
@@ -637,8 +718,15 @@
         const card = document.createElement('div');
         card.className = 'mini-card';
         card.innerHTML = `${renderCardPhoto(product.image)}<strong>${product.name}</strong><span>${info}</span>`;
+        const actions = document.createElement('div');
+        actions.className = 'card-actions';
+        const edit = document.createElement('button');
+        edit.className = 'small-btn';
+        edit.type = 'button';
+        edit.textContent = 'Edit';
+        edit.addEventListener('click', () => editProduct(product.id));
         const remove = document.createElement('button');
-        remove.className = 'remove icon-btn';
+        remove.className = 'small-btn danger';
         remove.type = 'button';
         remove.textContent = 'Ochirish';
         remove.addEventListener('click', () => {
@@ -646,7 +734,9 @@
           invoiceItems = invoiceItems.filter((item) => item.productId !== product.id);
           render();
         });
-        card.appendChild(remove);
+        actions.appendChild(edit);
+        actions.appendChild(remove);
+        card.appendChild(actions);
         list.appendChild(card);
 
         const pick = document.createElement('button');
@@ -676,8 +766,15 @@
         const card = document.createElement('div');
         card.className = 'mini-card';
         card.innerHTML = `<strong>${dealer.name}</strong><span>${detail}</span>`;
+        const actions = document.createElement('div');
+        actions.className = 'card-actions';
+        const edit = document.createElement('button');
+        edit.className = 'small-btn';
+        edit.type = 'button';
+        edit.textContent = 'Edit';
+        edit.addEventListener('click', () => editDealer(dealer.id));
         const remove = document.createElement('button');
-        remove.className = 'remove icon-btn';
+        remove.className = 'small-btn danger';
         remove.type = 'button';
         remove.textContent = 'Ochirish';
         remove.addEventListener('click', () => {
@@ -685,7 +782,9 @@
           if (selectedDealerId === dealer.id) selectedDealerId = '';
           render();
         });
-        card.appendChild(remove);
+        actions.appendChild(edit);
+        actions.appendChild(remove);
+        card.appendChild(actions);
         list.appendChild(card);
 
         const pick = document.createElement('button');
@@ -746,7 +845,7 @@
         row.innerHTML = `
           <div class="line-title">
             <div class="line-photo">${item.image ? `<img src="${item.image}" alt="">` : 'Rasm'}</div>
-            <div><strong>${item.name}</strong><span>${money.format(item.kg)} kg + ${money.format(item.canisterKg)} kg</span></div>
+            <div><strong>${item.name}</strong><span>1 dona: ${money.format(item.kg + item.canisterKg)} kg</span></div>
           </div>
           <div><label>Soni</label><input type="number" min="0" step="1" value="${item.qty}" data-line="${item.id}" data-key="qty"></div>
           <div><label>Narx</label><input type="number" min="0" step="0.01" value="${item.price}" data-line="${item.id}" data-key="price"></div>
@@ -794,7 +893,6 @@
         tr.innerHTML = `
           <td><div class="brand"><div class="line-photo">${item.image ? `<img src="${item.image}" alt="">` : 'Rasm'}</div><strong>${item.name}</strong></div></td>
           <td class="right">${money.format(item.kg)}</td>
-          <td class="right">${money.format(item.canisterKg)}</td>
           <td class="right">${money.format(item.qty)}</td>
           <td class="right">${formatMoney(item.price, item.currency)}</td>
           <td class="right"><strong>${formatMoney(rowTotal, item.currency)}</strong></td>
@@ -821,7 +919,7 @@
       const products = cleanItems()
         .map((item, index) => {
           const rowTotal = item.qty * item.price;
-          return `${index + 1}. ${item.name} | ${money.format(item.kg)} kg + ${money.format(item.canisterKg)} kg | ${money.format(item.qty)} x ${formatMoney(item.price, item.currency)} = ${formatMoney(rowTotal, item.currency)}`;
+          return `${index + 1}. ${item.name} | ${money.format(item.kg + item.canisterKg)} kg/dona | ${money.format(item.qty)} x ${formatMoney(item.price, item.currency)} = ${formatMoney(rowTotal, item.currency)}`;
         })
         .join('\n');
 
@@ -906,8 +1004,8 @@
     fields.forEach((id) => {
       const input = $('#' + id);
       if (!input) return;
-      input.addEventListener('input', render);
-      input.addEventListener('change', render);
+      input.addEventListener('input', updateTotalsOnly);
+      input.addEventListener('change', updateTotalsOnly);
     });
 
     $('#saveCatalogProduct').addEventListener('click', () => {
@@ -915,19 +1013,19 @@
       const kg = numberValue($('#catalogKg').value);
       const canisterKg = numberValue($('#catalogCanisterKg').value);
       if (!name || kg <= 0) return;
-      const existing = catalog.find((item) => item.name.toLowerCase() === name.toLowerCase());
+      const existing = editingProductId
+        ? catalog.find((item) => item.id === editingProductId)
+        : catalog.find((item) => item.name.toLowerCase() === name.toLowerCase());
       if (existing) {
+        existing.name = name;
         existing.kg = kg;
         existing.canisterKg = canisterKg;
         if (pendingCatalogImage) existing.image = pendingCatalogImage;
+        updateInvoiceItemsFromProduct(existing);
       } else {
         catalog.push({ id: uid(), name, kg, canisterKg, image: pendingCatalogImage });
       }
-      $('#catalogName').value = '';
-      $('#catalogKg').value = '';
-      $('#catalogCanisterKg').value = '';
-      $('#catalogImage').value = '';
-      pendingCatalogImage = '';
+      resetProductForm();
       render();
     });
 
@@ -943,20 +1041,19 @@
       const name = $('#dealerName').value.trim();
       if (!name) return;
       const dealer = {
-        id: uid(),
+        id: editingDealerId || uid(),
         name,
         phone: $('#dealerPhone').value.trim(),
         tax: $('#dealerTax').value.trim(),
         address: $('#dealerAddress').value.trim()
       };
-      const existing = dealers.find((item) => item.name.toLowerCase() === name.toLowerCase());
+      const existing = editingDealerId
+        ? dealers.find((item) => item.id === editingDealerId)
+        : dealers.find((item) => item.name.toLowerCase() === name.toLowerCase());
       if (existing) Object.assign(existing, dealer, { id: existing.id });
       else dealers.push(dealer);
-      $('#dealerName').value = '';
-      $('#dealerPhone').value = '';
-      $('#dealerTax').value = '';
-      $('#dealerAddress').value = '';
       if (!selectedDealerId) selectedDealerId = (existing || dealer).id;
+      resetDealerForm();
       render();
     });
 
@@ -967,7 +1064,7 @@
       reader.onload = () => {
         localStorage.setItem(logoKey, reader.result);
         setLogo(reader.result);
-        render();
+        updateTotalsOnly();
       };
       reader.readAsDataURL(file);
     });
