@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Invoice Generator</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <style>
     :root {
       --bg: #eef7ff;
@@ -398,6 +399,7 @@
         <div class="actions">
           <button class="btn" id="printBtn" type="button">Print / PDF</button>
           <button class="btn secondary" id="telegramBtn" type="button">Telegramga yuborish</button>
+          <button class="btn secondary" id="telegramPdfBtn" type="button">PDF botga</button>
           <button class="btn secondary" id="clearInvoiceBtn" type="button">Invoice tozalash</button>
           <button class="btn danger" id="clearAllBtn" type="button">Hammasini tozalash</button>
         </div>
@@ -595,6 +597,11 @@
       localStorage.setItem(dealerKey, JSON.stringify(dealers));
     }
 
+    function updateTotalsOnly() {
+      renderPreview();
+      saveState();
+    }
+
     function setLogo(dataUrl) {
       const preview = $('#logoPreview');
       if (!dataUrl) {
@@ -717,7 +724,7 @@
       const item = invoiceItems.find((line) => line.id === id);
       if (!item) return;
       item[key] = key === 'currency' ? value : numberValue(value);
-      render();
+      updateTotalsOnly();
     }
 
     function removeItem(id) {
@@ -967,6 +974,28 @@
 
     $('#printBtn').addEventListener('click', () => window.print());
 
+    async function createInvoicePdfBase64() {
+      if (!window.html2pdf) {
+        throw new Error('PDF kutubxonasi yuklanmadi');
+      }
+
+      const opt = {
+        margin: 8,
+        filename: `${$('#invoiceNo').value || 'invoice'}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+
+      const blob = await window.html2pdf().set(opt).from($('#invoice')).outputPdf('blob');
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result).split(',')[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    }
+
     $('#telegramBtn').addEventListener('click', () => {
       const tg = window.Telegram && window.Telegram.WebApp;
       const payload = {
@@ -995,6 +1024,34 @@
       navigator.clipboard.writeText(payload.text).then(() => {
         alert('Invoice matni copy qilindi.');
       });
+    });
+
+    $('#telegramPdfBtn').addEventListener('click', async () => {
+      const tg = window.Telegram && window.Telegram.WebApp;
+      if (!(tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id)) {
+        alert('PDF botga yuborish faqat Telegram Web App ichida ishlaydi.');
+        return;
+      }
+
+      try {
+        tg.showAlert('PDF tayyorlanyapti, biroz kuting.');
+        const pdfBase64 = await createInvoicePdfBase64();
+        const response = await fetch('/api/send-pdf', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: tg.initDataUnsafe.user.id,
+            fileName: `${$('#invoiceNo').value || 'invoice'}.pdf`,
+            pdfBase64,
+            caption: buildInvoiceText()
+          })
+        });
+        const result = await response.json();
+        if (!result.ok) throw new Error(result.error || 'PDF yuborilmadi');
+        tg.showAlert('PDF Telegram chatga yuborildi.');
+      } catch (error) {
+        tg.showAlert(`Xatolik: ${error.message}`);
+      }
     });
 
     $('#clearInvoiceBtn').addEventListener('click', () => {
