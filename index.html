@@ -1020,9 +1020,24 @@
         total: document.querySelector('#totalOut').textContent,
         text
       };
-      if (tg && tg.initData) {
-        tg.sendData(JSON.stringify(payload));
-        tg.showAlert('Invoice botga yuborildi. Agar chatda ko‘rinmasa, bot server handler kerak bo‘ladi.');
+
+      if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id) {
+        fetch('/api/send-invoice', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: tg.initDataUnsafe.user.id,
+            payload
+          })
+        })
+          .then((response) => response.json())
+          .then((result) => {
+            if (!result.ok) throw new Error(result.error || 'Telegramga yuborilmadi');
+            tg.showAlert('Invoice Telegram chatga yuborildi.');
+          })
+          .catch((error) => {
+            tg.showAlert(`Xatolik: ${error.message}`);
+          });
         return;
       }
 
